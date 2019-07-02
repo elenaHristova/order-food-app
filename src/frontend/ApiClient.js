@@ -24,6 +24,11 @@ class ApiClient {
 		return response.data;
 	}	
 
+	static async getSpecialUsers() {
+		let response = await axios.get(`${path}/users/special`);
+		return response.data;
+	}	
+
 	static async getDishes() {
 		let response = await axios.get(`${path}/dishes`);
 		return response.data;
@@ -40,15 +45,13 @@ class ApiClient {
 		return response.data;
 	}
 
-	static async executeOrder(orderList, activeUserId) {
-		let priceSum = map(orderList, item => parseInt(item.quantity)*parseFloat(item.price)).reduce((prev, next) => prev + next );
-
+	static async executeOrder(orderList, price, activeUserId) {
 		let description = map(orderList, (itemData, item) => `${itemData.quantity} x ${item}`).join(';');
 		
 		let input = {
 			userId: activeUserId,
 			description,
-			price: priceSum.toFixed(2),
+			price,
 		};
 
 		await axios.post(`${path}/orders`, input);
@@ -77,7 +80,7 @@ class ApiClient {
 
 	static async createUser(input) {
 		let response = await axios.post(`${path}/users`, input);
-		return response.data;
+		return response.data || response;
 	}
 
 	static async deleteUser(userId) {

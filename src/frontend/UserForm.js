@@ -2,17 +2,11 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import ApiClient from "./ApiClient";
-import { Dropdown, Form, Button } from "semantic-ui-react";
+import { Message, Dropdown, Form, Button } from "semantic-ui-react";
 import { Formik } from 'formik';
 import { map } from "lodash";
 import { withRouter } from "react-router-dom";
-
-const ROLES = [ "admin", "personel", "caterer" ];
-const ROLES_OPTIONS = map(ROLES, (role, key) => {
-	return { key, text: role, value: role };
-});
-
-const handleDropdownChange = (e, { name, value }, setFieldValue) => setFieldValue(name, value);
+import { ROLES, ROLES_OPTIONS, GENDER_OPTIONS } from "./util/constraints";
 
 class UserForm extends Component {
 	constructor(props) {
@@ -41,21 +35,29 @@ class UserForm extends Component {
 			gender: values.gender,
 			role: !values.role ? "user" : values.role,
 		};
+		let errorCreation = false;
 
 		if (this.state.user) {
 			user.id = this.props.userId;
 			await ApiClient.editUser(user);
 		} else {			
 			let createdUser = await ApiClient.createUser(user);
-			if (this.props.setUser) {
+			if (createdUser.error) {
+				errorCreation = true;
+				this.setState({ showDuplicateError: true });
+			} else if (this.props.setUser) {
 				this.props.setUser(createdUser);
 				this.props.history.push("/");
 			}
 		}
 		
-		if (this.props.onClose) {
+		if (this.props.onClose && !errorCreation) {
 			await this.props.onClose();
 		}	
+	}
+
+	onChange = () => {
+		this.setState({ showDuplicateError: false });
 	}
 
 	isEdit = () => { return this.props.userId !== null; }
@@ -69,11 +71,13 @@ class UserForm extends Component {
 		let { 
 			user,
 			isLoading,
+			showDuplicateError,
 		} = this.state;
 
 		let form = 
 		<Formik
 			initialValues={user}
+			validate={this.onChange}
 			>
 		{({ handleSubmit, handleChange, handleBlur, values, errors, setFieldValue }) => (
 			<Form>
@@ -99,7 +103,14 @@ class UserForm extends Component {
 				}
 				<Form.Field>
 					<label>Gender</label>
-					<input type="text" name="gender" onChange={handleChange} defaultValue={ values.gender } />
+					<Dropdown
+						name="gender"
+						fluid
+						selection
+						onChange={ (event, data) => setFieldValue("gender", data.value) }
+						value={values.gender}
+						options={GENDER_OPTIONS}
+					/>	
 				</Form.Field>
 				{
 					this.props.isAdmin ?	
@@ -117,7 +128,12 @@ class UserForm extends Component {
 					:
 						null
 				}
-					
+				{ showDuplicateError && 
+					<Message negative>
+					    <Message.Header>A user with this username already exists!</Message.Header>
+					    <p>Select another username</p>
+				  	</Message>
+				}
 				<Button onClick={(event) => this.onSubmit(event, values)}>{ this.state.user ? "Save" : "Register" }</Button>
 			</Form>
 		)}

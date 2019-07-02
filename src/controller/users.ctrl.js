@@ -16,6 +16,14 @@ router.get('/caterers', function(req, res) {
     }).catch((err) => console.log(err));
 });
 
+
+router.get('/special', function(req, res) {
+    const db = req.app.locals.db;
+    db.collection('users').find({ role: { $in: ['caterer', 'personel', 'admin'] } }).toArray().then(caterers => {
+        res.json(caterers.map(caterer => replaceId(caterer)));                  
+    }).catch((err) => console.log(err));
+});
+
 router.get("/", function(req, res) {
     const db = req.app.locals.db;
     db.collection('users').find().toArray().then(users => {
@@ -50,7 +58,6 @@ router.get('/:id', function(req, res) {
             `Invalid user ID: ${params.id}. Id should have 24 hexadecimal characters.`, err));
 });
 
-
 router.post('/', (req, res) => {
     const db = req.app.locals.db;
     const user = req.body;
@@ -64,13 +71,23 @@ router.post('/', (req, res) => {
      })
     .then(user => {
         console.log("Inserting user: ", user);
-        db.collection('users').insertOne(user).then(result => {
-            if(result.result.ok && result.insertedCount === 1) {
-                replaceId(user);
-                const uri = req.baseUrl + '/' + user._id
-                res.location(uri).status(201).json(user);
-            }
-        });
+        db.collection('users').findOne({username: user.username})
+            .then(user => {
+                if(user) {
+                    replaceId(user);
+                    res.json({ error: "A user with this username already exists!" });
+                } else {
+                    user = req.body;
+                    db.collection('users').insertOne(user).then(result => {
+                        if(result.result.ok && result.insertedCount === 1) {
+                            replaceId(user);
+                            const uri = req.baseUrl + '/' + user._id
+                            res.location(uri).status(201).json(user);
+                        }
+                    });  
+                }
+            })
+            .catch((err) => console.log(err));   
     }).catch(err => error(req, res, 400, 
         `Invalid user: ${util.inspect(err)}`, err));
 });
@@ -113,6 +130,9 @@ router.delete('/:id', function(req, res) {
     const db = req.app.locals.db;
     indicative.validate(params, { id: 'required|regex:^[0-9a-f]{24}$' })
         .then(() => {
+            db.collection('orders').remove( 
+                { userId: params.id}
+            );
             db.collection('users').findOneAndDelete({_id: new ObjectID(params.id)})
             .then(({ value }) => {
                 if(value) {

@@ -17,6 +17,10 @@ class App extends Component {
 
 	getActiveUser = (activeUser) => {
 		console.log(activeUser);
+		if (activeUser._id) {
+			activeUser.id = activeUser._id;
+			delete activeUser._id;
+		}
 		this.setState({ activeUser, isAdmin: activeUser.role === "admin" });
 	}
 

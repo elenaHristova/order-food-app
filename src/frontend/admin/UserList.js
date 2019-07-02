@@ -24,8 +24,7 @@ class UserList extends Component {
 	}
 
 	componentDidMount = async() => {
-		let users = await ApiClient.getUsers();
-		this.setState({ users, isLoading: false});
+		await this.loadUsers();
 	}
 
 	editUserById = (event, userId) => {
@@ -52,14 +51,18 @@ class UserList extends Component {
 		}
 	}
 
-
-	onClose = async() => {
-		let users = await ApiClient.getUsers();
+	loadUsers = async() => {
+		let users = await ApiClient.getSpecialUsers();
 		this.setState({ 
 			users,
+			isLoading: false,
 			isEditing: false,
 			isCreating: false,
 		});
+	}
+ 
+	onClose = async() => {
+		await this.loadUsers();
 	}
 
 	render() {

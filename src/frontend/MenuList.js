@@ -1,29 +1,31 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ApiClient from "./ApiClient";
-import { map, isUndefined } from "lodash";
+import { map, isUndefined, isEmpty } from "lodash";
 import { Dropdown, Tab, Table, Icon, Modal, Button } from "semantic-ui-react";
 import { Route, Link, BrowserRouter as Router } from 'react-router-dom';
 
 class ViewOrderOverlay extends Component {
 	constructor(props) {
 		super(props);
-		this.state = { successMsg: [] };
+		this.price = map(props.orderList, item => parseInt(item.quantity)*parseFloat(item.price)).reduce((prev, next) => prev + next );
+		this.state = { orderSent: false };
 	}
 
 	order = async() => {
-		await ApiClient.executeOrder(this.props.orderList, this.props.activeUserId);
-		this.setState({ successMsg: <p>Order sent!</p> });		
+		await ApiClient.executeOrder(this.props.orderList, this.price, this.props.activeUserId);
+		this.setState({ orderSent: true });		
 	}
 
 	render = () => {
 		let { activeUserId, orderList, onClose } = this.props;
+		let { orderSent } = this.state;
 
 		return (
-			 <Modal open={true} closeIcon={true} onClose={onClose}>
+			 <Modal open={!orderSent} closeIcon={true} onClose={onClose}>
 				<Modal.Content>
 					{ map(orderList, (item, key) => { return <p key={key}>{item.quantity} x {key}</p>; }) }
-					{ this.state.successMsg }
+					<p>Price: {this.price} lv</p>
 					<Button content="Finish order" onClick={this.order} />
 				</Modal.Content>
 			</Modal>
@@ -95,7 +97,7 @@ class MenuList extends Component {
 						return <Table.Row key={key}>
 								<Table.Cell>{menuItem.name}</Table.Cell>
 								<Table.Cell>{menuItem.description}</Table.Cell>
-								<Table.Cell>{menuItem.price}</Table.Cell>
+								<Table.Cell>{menuItem.price} lv</Table.Cell>
 								<Table.Cell>
 									<Dropdown
 										placeholder="Select quantity"
@@ -139,8 +141,8 @@ class MenuList extends Component {
 					<Tab menu={{ fluid: true, vertical: true, tabular: true }}  panes={panes} />
 					
 				}	
-				{ openViewOrderOverlay ? <ViewOrderOverlay onClose={this.onClose} activeUserId={this.props.activeUser.id} orderList={orderList} /> : null }
-				<Button onClick={this.order}>Order</Button>				
+				{ openViewOrderOverlay ? <ViewOrderOverlay onClose={this.onClose} activeUserId={this.props.activeUser.id } orderList={orderList} /> : null }
+				{ !isEmpty(orderList) && <Button onClick={this.order}>Order</Button> }			
 		</div>)	
 	}			
 };

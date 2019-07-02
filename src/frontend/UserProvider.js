@@ -6,12 +6,13 @@ import PersonelView from "./personel/PersonelView";
 import MenuList from "./MenuList";
 import OrderList from "./OrderList";
 import { Menu } from "semantic-ui-react";
-import { Route, Link, BrowserRouter as Router } from 'react-router-dom';
+import { withRouter, Route, Link, BrowserRouter as Router } from 'react-router-dom';
 
 class UserProvider extends Component {
   constructor(props) {
     super(props);
     this.role = props.activeUser.role;
+    this.props.history.push("/");
   }
 
   render() {
@@ -42,4 +43,4 @@ class UserProvider extends Component {
   }
 };
 
-export default UserProvider;
+export default withRouter(UserProvider);

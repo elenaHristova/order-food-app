@@ -4,25 +4,8 @@ import ApiClient from ".././ApiClient";
 import { map, filter } from "lodash";
 import { Table, Icon, Modal, Button } from "semantic-ui-react";
 import { Dropdown } from 'semantic-ui-react';
+import { ORDER_STATUS_OPTIONS, ORDER_STATUS } from "../util/constraints";
 
-const ORDER_STATUS_OPTIONS = [
-	{
-		key: 0,
-		text: 'Sent',
-		value: 0,
-	},
-	{
-		key: 1,
-		text: 'In process of cooking',
-		value: 1,
-	},
-	{
-		key: 2,
-		text: 'Coming',
-		value: 2,
-	},
-];
-const ORDER_STATUS = [ 'Sent', 'In process of cooking', 'Coming', 'Completed' ];
 
 class OrderList extends Component {
 	constructor(props) {
@@ -34,9 +17,20 @@ class OrderList extends Component {
 	}
 
 	componentDidMount = async() => {
-		let orders = await ApiClient.getOrders();
 		let caterers = await ApiClient.getCarterers();
-		this.setState({ caterers, orders, isLoading: false });
+		this.setState({ caterers });
+		await this.loadOrders();
+	}
+
+	loadOrders = async() => {
+		let orders = await ApiClient.getOrders(this.props.activeUserId);
+		orders = orders.sort(function(order1, order2) {
+			let first = new Date(order1.time);
+			let second = new Date(order2.time);
+			return first>second ? -1 : first<second ? 1 : 0;
+		});
+
+		this.setState({ orders, isLoading: false });
 	}
 
 	changeStatus = async(event, data, id) => {
@@ -48,10 +42,7 @@ class OrderList extends Component {
 		}
 
 		await ApiClient.editOrder(order);
-
-		this.setState({ isLoading: true });
-		let orders = await ApiClient.getOrders();
-		this.setState({ orders, isLoading: false });
+		await this.loadOrders();
 	}
 
 	changeCaterer = async(event, data, id) => {
@@ -64,8 +55,13 @@ class OrderList extends Component {
 
 		await ApiClient.editOrder(order);
 		this.setState({ isLoading: true });
-		let orders = await ApiClient.getOrders();
-		this.setState({ orders, isLoading: false });
+		await this.loadOrders();
+	}
+
+	getOrderedItems = (description) => {
+		let arrayOfItems = description.split(";");
+
+		return map(arrayOfItems, (item, key) => <p key={key}>{ item }</p>);
 	}
 
 	render() {
@@ -85,14 +81,9 @@ class OrderList extends Component {
 					?
 					<p>Loading...</p>
 					:
-					orders && orders.length === 0 
-					?
-					<p>No orders available</p>
-					:
 					<Table>
 						<Table.Header>
 							<Table.Row>
-								<Table.HeaderCell>Order</Table.HeaderCell>
 								<Table.HeaderCell>Time</Table.HeaderCell>
 								<Table.HeaderCell>Order items</Table.HeaderCell>
 								<Table.HeaderCell>Status</Table.HeaderCell>
@@ -103,9 +94,8 @@ class OrderList extends Component {
 						{ 
 							map(orders, (order, key) => {
 							return <Table.Row key={key}>
-									<Table.Cell>{order.id}</Table.Cell>
 									<Table.Cell>{order.time}</Table.Cell>
-									<Table.Cell>{order.dishes}</Table.Cell>
+									<Table.Cell>{ this.getOrderedItems(order.description) }</Table.Cell>
 									<Table.Cell>
 										Current: {ORDER_STATUS[order.status]} 
 										<br/>

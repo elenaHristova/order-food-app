@@ -4,8 +4,7 @@ import ApiClient from "./ApiClient";
 import { map } from "lodash";
 import { Table, Icon, Modal, Button } from "semantic-ui-react";
 import { Dropdown } from 'semantic-ui-react';
-
-const ORDER_STATUS_OPTIONS = [ 'Sent', 'In process of cooking', 'Coming', 'Completed' ];
+import { ORDER_STATUS } from "./util/constraints";
 
 class OrderList extends Component {
 	constructor(props) {
@@ -17,13 +16,19 @@ class OrderList extends Component {
 
 	componentDidMount = async() => {
 		let orders = await ApiClient.getOrdersByUserId(this.props.activeUserId);
+		orders = orders.sort(function(order1, order2) {
+			let first = new Date(order1.time);
+			let second = new Date(order2.time);
+			return first>second ? -1 : first<second ? 1 : 0;
+		});
+		
 		this.setState({ orders, isLoading: false });
 	}
 
 	getOrderedItems = (description) => {
 		let arrayOfItems = description.split(";");
 
-		return map(arrayOfItems, (item) => <p>{ item }</p>);
+		return map(arrayOfItems, (item, key) => <p key={key}>{ item }</p>);
 	}
 
 	render() {
@@ -64,19 +69,19 @@ class OrderList extends Component {
 									<Table.Cell>{order.time}</Table.Cell>
 									<Table.Cell>{ this.getOrderedItems(order.description) }</Table.Cell>
 									<Table.Cell>
-										{ORDER_STATUS_OPTIONS[order.status]} 
+										{ORDER_STATUS[order.status]} 
 										{ 
 											manageableSatus 
 											? <Dropdown
 												placeholder='Change status'
 												fluid
 												selection
-												options={ORDER_STATUS_OPTIONS}
+												options={ORDER_STATUS}
 												/> 
 											: null
 										}
 									</Table.Cell>
-									<Table.Cell>{order.price}</Table.Cell>
+									<Table.Cell>{order.price} lv</Table.Cell>
 								</Table.Row>;
 							})
 						}

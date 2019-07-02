@@ -5,11 +5,7 @@ import ApiClient from ".././ApiClient";
 import { Dropdown, Form, Button, TextArea } from "semantic-ui-react";
 import { Formik } from 'formik';
 import { map } from "lodash";
-
-const DISH_TYPES = [ "salad", "pasta", "pizza", "dessert", "drink"];
-const DISH_TYPES_OPTIONS = map(DISH_TYPES, (dishType, key) => {
-	return { key, text: dishType, value: dishType };
-});
+import { DISH_TYPES, DISH_TYPES_OPTIONS } from "../util/constraints";
 
 class DishForm extends Component {
 	constructor(props) {
