@@ -81,7 +81,7 @@ class OrderList extends Component {
 											: null
 										}
 									</Table.Cell>
-									<Table.Cell>{order.price} lv</Table.Cell>
+									<Table.Cell>{parseFloat(order.price).toFixed(2)} lv</Table.Cell>
 								</Table.Row>;
 							})
 						}

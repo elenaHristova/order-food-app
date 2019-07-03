@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import LoginForm from "./LoginForm";
 import UserForm from "./UserForm";
 import UserProvider from "./UserProvider";
+import MenuList from "./MenuList";
 import { Menu, Button } from "semantic-ui-react";
 import { Route, Link, BrowserRouter as Router } from 'react-router-dom';
 
@@ -49,9 +50,13 @@ class App extends Component {
 							<Menu.Item>
 								<Link to="/">Login</Link>
 							</Menu.Item>
+							<Menu.Item>
+								<Link to="/menu">Menu</Link>
+							</Menu.Item>
 						</Menu>
 						<Route path="/" exact component={() => <LoginForm setUser={this.getActiveUser} activeUser={activeUser}/>} />
 						<Route path="/register" component={ () => <UserForm setUser={this.getActiveUser} activeUser={activeUser}/>} />
+						<Route path="/menu" exact component={ () => <MenuList /> } />	
 					</div>
 				}
 			</Router>

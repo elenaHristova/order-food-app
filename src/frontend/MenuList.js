@@ -2,8 +2,10 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ApiClient from "./ApiClient";
 import { map, isUndefined, isEmpty } from "lodash";
-import { Dropdown, Tab, Table, Icon, Modal, Button } from "semantic-ui-react";
+import { Message, Dropdown, Tab, Table, Icon, Modal, Button } from "semantic-ui-react";
 import { Route, Link, BrowserRouter as Router } from 'react-router-dom';
+import { withRouter } from 'react-router-dom';
+
 
 class ViewOrderOverlay extends Component {
 	constructor(props) {
@@ -14,7 +16,7 @@ class ViewOrderOverlay extends Component {
 
 	order = async() => {
 		await ApiClient.executeOrder(this.props.orderList, this.price, this.props.activeUserId);
-		this.setState({ orderSent: true });		
+		this.props.onClose();	
 	}
 
 	render = () => {
@@ -25,7 +27,7 @@ class ViewOrderOverlay extends Component {
 			 <Modal open={!orderSent} closeIcon={true} onClose={onClose}>
 				<Modal.Content>
 					{ map(orderList, (item, key) => { return <p key={key}>{item.quantity} x {key}</p>; }) }
-					<p>Price: {this.price} lv</p>
+					<p>Price: {this.price.toFixed(2)} lv</p>
 					<Button content="Finish order" onClick={this.order} />
 				</Modal.Content>
 			</Modal>
@@ -65,7 +67,8 @@ class MenuList extends Component {
 	}
 
 	onClose = async() => {
-		this.setState({	openViewOrderOverlay: false	});
+		//this.setState({	openViewOrderOverlay: false,  orderList: {} });
+		this.props.history.push('/orders');
 	}
 
 	updateOrderList = (event, menuItem, quantity) => {
@@ -98,16 +101,17 @@ class MenuList extends Component {
 								<Table.Cell>{menuItem.name}</Table.Cell>
 								<Table.Cell>{menuItem.description}</Table.Cell>
 								<Table.Cell>{menuItem.price} lv</Table.Cell>
-								<Table.Cell>
-									<Dropdown
-										placeholder="Select quantity"
-										selection
-										fluid
-										value={ orderList[menuItem.name] ? orderList[menuItem.name].quantity :  0}
-										onChange={ (event, data) => this.updateOrderList(event, menuItem, data.value) }
-										options={QUANTITY_OPTIONS}
-									/>
-								</Table.Cell>
+									{ this.props.activeUser && 
+										<Table.Cell>
+										<Dropdown
+											placeholder="Select quantity"
+											selection
+											fluid
+											value={ orderList[menuItem.name] ? orderList[menuItem.name].quantity :  0}
+											onChange={ (event, data) => this.updateOrderList(event, menuItem, data.value) }
+											options={QUANTITY_OPTIONS}
+										/></Table.Cell>
+									}								
 							</Table.Row>;
 						}
 					)
@@ -141,10 +145,18 @@ class MenuList extends Component {
 					<Tab menu={{ fluid: true, vertical: true, tabular: true }}  panes={panes} />
 					
 				}	
-				{ openViewOrderOverlay ? <ViewOrderOverlay onClose={this.onClose} activeUserId={this.props.activeUser.id } orderList={orderList} /> : null }
+				{ this.props.activeUser && openViewOrderOverlay ? <ViewOrderOverlay onClose={this.onClose} activeUserId={this.props.activeUser.id } orderList={orderList} /> : null }
+				
+				{ 
+					!isEmpty(orderList) && <Message>
+				    <Message.Header>Items to order</Message.Header>
+				    { map(orderList, (item, key) => <p key={key}>{item.quantity} * {key}</p>)}
+				    <b>Total: { map(orderList, item => parseInt(item.quantity)*parseFloat(item.price)).reduce((prev, next) => prev + next ).toFixed(2) } lv</b>
+				  </Message>
+				}
 				{ !isEmpty(orderList) && <Button onClick={this.order}>Order</Button> }			
 		</div>)	
 	}			
 };
 
-export default MenuList;
+export default withRouter(MenuList);

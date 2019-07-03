@@ -46,8 +46,7 @@ class UserList extends Component {
 		event.preventDefault();
 		if (confirm("Are you sure you want to delete user with ID " + rowId)) {
 			await ApiClient.deleteUser(userId);
-			let users = await ApiClient.getUsers();
-			this.setState({ users });
+			await this.loadUsers();
 		}
 	}
 
